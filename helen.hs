@@ -1,5 +1,4 @@
 
-
 module Helen_skaba where
 -- Copyright (c) 2016: Tapani Raunio, tapani.raunio@gmail.com
 
@@ -54,46 +53,3 @@ localMax = localEx (>)
 
 localMin :: (Ord b) => [PriceData a b] -> [PriceData a b]
 localMin = localEx (<)
-
-
--- localMax :: [Price] -> [Price]
--- localMax = localEx (>)
---
-
-
--- first try:
--- firstEx' :: (Price -> Price -> Bool) -> [Price] -> [Price]
--- firstEx' _ [] = []
--- firstEx' _ [_] = []
--- firstEx' f (x:y:xs)
---   | x `f` y     = [x]
---   | y `f` x     = []
---   | otherwise = firstEx' f (x:xs)
---
--- lastEx :: (Price -> Price -> Bool) -> [Price] -> [Price]
--- lastEx f = firstEx f . reverse
---
--- localEx :: (Price -> Price -> Bool) -> [Price] -> [Price]
--- localEx _ [] = []
--- localEx _ [_] = []
--- localEx f [x,y]
---   | x `f` y = [x]
---   | y `f` x = [y]
---   | otherwise = []
--- localEx f xs = firstEx f xs ++ lEx f xs ++ lastEx f xs
---
--- lEx :: (Price -> Price -> Bool) -> [Price] -> [Price]
--- lEx _ [] = []
--- lEx _ [_] = []
--- lEx _ [_,_] = []
--- lEx f (x:y:z:xs)
---     | x == y = lEx f (x:z:xs)
---     | y `f` x && y `f` z = y : lEx f (y:z:xs)
---     | y == z = lEx f (x:z:xs)
---     | otherwise = lEx f (y:z:xs)
---
--- localMax :: [Price] -> [Price]
--- localMax = localEx (>)
---
--- localMin :: [Price] -> [Price]
--- localMin = localEx (<)
