@@ -11,9 +11,28 @@ type Year =   Int
 type Month =  Int
 type Day =    Int
 type Hours =  String -- e.g "00-01"
-data Date = D Day Month Year
+data Date = D Day Month Year deriving Show
 
-data TimeStamp = TS Date Hours
+data TimeStamp = TS Date Hours deriving Show
+
+instance Eq TimeStamp where
+  (==) (TS (D d1 m1 y1) s1 ) (TS (D d2 m2 y2) s2) = yy && dd && mm && ss
+      where yy = y1 == y2
+            mm = m1 == m2
+            dd = d1 == d2
+            ss = s1 == s2
+
+instance Ord TimeStamp where
+  compare (TS (D d1 m1 y1) s1 ) (TS (D d2 m2 y2) s2)
+      | y1 < y2   = LT
+      | y2 > y1   = GT
+      | m1 < m2   = LT
+      | m2 > m1   = GT
+      | d1 < d2   = LT
+      | d2 > d2   = GT
+      | s1 < s2   = LT
+      | s2 > s1   = GT
+      | otherwise = EQ
 
 data PriceData a b = PD { tag:: a, value::b}
   deriving (Show)
