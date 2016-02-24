@@ -5,6 +5,7 @@ module Helen_skaba where
 -- Price peaks and lows, i.e. local maxima and minima.
 -- Constructor tells the whether first value is maximum or minimum
 
+
 type Price = Float
 
 type Year =   Int
@@ -14,6 +15,14 @@ type Hours =  String -- e.g "00-01"
 data Date = D Day Month Year deriving Show
 
 data TimeStamp = TS Date Hours deriving Show
+
+-- Both a and b should be Ord instances
+data PriceData a b = PD { tag:: a, value::b} deriving (Show)
+
+type ChargeLoss = Float -- value between 0-1. Amount of charge lost
+
+-- Requirements for buying and selling
+data Reqs = Full ChargeLoss Price | Empty ChargeLoss deriving (Show)
 
 instance Eq TimeStamp where
   (==) (TS (D d1 m1 y1) s1 ) (TS (D d2 m2 y2) s2) = yy && dd && mm && ss
@@ -34,9 +43,8 @@ instance Ord TimeStamp where
       | s2 > s1   = GT
       | otherwise = EQ
 
-data PriceData a b = PD { tag:: a, value::b}
-  deriving (Show)
-
+-- Checks whether first item is max/min.
+-- Consecutive values are discarded
 firstEx :: (b -> b -> Bool) -> [PriceData a b] -> [PriceData a b]
 firstEx _ [] = []
 firstEx _ [_] = []
@@ -48,6 +56,7 @@ firstEx f (x:y:xs)
 lastEx :: (b -> b -> Bool) -> [PriceData a b] -> [PriceData a b]
 lastEx f = firstEx f . reverse
 
+-- Helper function for calculating local min or max
 localEx :: (Eq b) =>  (b -> b -> Bool) -> [PriceData a b] -> [PriceData a b]
 localEx _ [] = []
 localEx _ [_] = []
@@ -57,6 +66,7 @@ localEx f [x,y]
   | otherwise = []
 localEx f xs = firstEx f xs ++ lEx f xs ++ lastEx f xs
 
+-- Helper function for localEx
 lEx :: (Eq b) => (b -> b -> Bool) -> [PriceData a b] -> [PriceData a b]
 lEx _ [] = []
 lEx _ [_] = []
@@ -67,8 +77,35 @@ lEx f (x:y:z:xs)
     | value y == value z                         = lEx f (x:z:xs)
     | otherwise                                  = lEx f (y:z:xs)
 
+-- Calculates the local maxima (including end points)
 localMax :: (Ord b) => [PriceData a b] -> [PriceData a b]
 localMax = localEx (>)
 
+-- Calculate the local minima (including end points)
 localMin :: (Ord b) => [PriceData a b] -> [PriceData a b]
 localMin = localEx (<)
+
+-- Calculates the price of buy/sell pattern. Maybe in future I'll do this with
+-- fold :).
+calcPrice :: Reqs -> [PriceData a Price] -> Price
+calcPrice _ [] = 0
+calcPrice (Full loss price) [x] = (1-loss)*(value x - price)
+calcPrice (Empty _) [x]      = -(value x)
+calcPrice (Full loss price) (x:xs) = (1-loss)*(value x - price) +
+                                      calcPrice (Empty loss) xs
+calcPrice (Empty loss) (x:xs) = -(value x) + calcPrice (Full loss (value x)) xs
+
+
+-- Function input: Reqs, maxs, mins
+-- Function output: most money :)
+bestMoney :: Reqs -> [PriceData a b] -> [PriceData a b] -> [PriceData a b]
+bestMoney _ _ _ = undefined
+bestMoney _ [] _ = []
+bestMoney _ _ [] = []
+-- bestMoney (Full diff) highs lows =
+
+
+-- step 1. calculate possible prices
+
+
+-- bestMoney (Empty diff) b c = undefined
