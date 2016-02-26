@@ -17,7 +17,7 @@ data Date = D Day Month Year deriving Show
 data TimeStamp = TS Date Hours deriving Show
 
 -- Both a and b should be Ord instances
-data PriceData a b = PD { tag:: a, value::b} deriving (Show)
+data PriceData a b = PD { tag::a, value::b} deriving (Show)
 
 type ChargeLoss = Float -- value between 0-1. Amount of charge lost
 
@@ -93,15 +93,15 @@ calcPrice (Full loss price) [x] = (1-loss)*(value x - price)
 calcPrice (Empty _) [x]      = -(value x)
 calcPrice (Full loss price) (x:xs) = (1-loss)*(value x - price) +
                                       calcPrice (Empty loss) xs
-calcPrice (Empty loss) (x:xs) = -(value x) + calcPrice (Full loss (value x)) xs
+calcPrice (Empty loss) (x:xs) = calcPrice (Full loss (value x)) xs
 
 
 -- Function input: Reqs, maxs, mins
 -- Function output: most money :)
-bestMoney :: Reqs -> [PriceData a b] -> [PriceData a b] -> [PriceData a b]
-bestMoney _ _ _ = undefined
-bestMoney _ [] _ = []
-bestMoney _ _ [] = []
+-- bestMoney :: Reqs -> [PriceData a b] -> [PriceData a b] -> [PriceData a b]
+-- bestMoney _ _ _ = undefined
+-- bestMoney _ [] _ = []
+-- bestMoney _ _ [] = []
 -- bestMoney (Full diff) highs lows =
 
 
