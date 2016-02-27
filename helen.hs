@@ -85,15 +85,20 @@ localMax = localEx (>)
 localMin :: (Ord b) => [PriceData a b] -> [PriceData a b]
 localMin = localEx (<)
 
--- Calculates the price of buy/sell pattern. Maybe in future I'll do this with
--- fold :).
+-- Calculates the price of buy/sell pattern. Version 2 with fold
+-- Version 2, using fold
 calcPrice :: Reqs -> [PriceData a Price] -> Price
 calcPrice _ [] = 0
-calcPrice (Full loss price) [x] = (1-loss)*(value x - price)
-calcPrice (Empty _) [x]      = -(value x)
-calcPrice (Full loss price) (x:xs) = (1-loss)*(value x - price) +
-                                      calcPrice (Empty loss) xs
-calcPrice (Empty loss) (x:xs) = calcPrice (Full loss (value x)) xs
+calcPrice (Full loss price) [x] = (1-loss)*value x - price
+calcPrice a@(Full loss _) (x:xs) =
+      calcPrice a [x] + calcPrice (Empty loss) xs
+calcPrice (Empty loss) xs = revenue*(1-loss) - costs
+            where tupper = foldl f (False, 0, 0) xs
+                  revenue = let (_,sells,_)=tupper in sells
+                  costs = let (_,_,buys)=tupper in buys
+                  f acc x = let (full, sells, buys) = acc
+                            in if full then (False, sells + value x, buys)
+                                  else (True, sells, buys+ value x)
 
 
 -- Function input: Reqs, maxs, mins
