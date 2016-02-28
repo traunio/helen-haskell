@@ -2,10 +2,6 @@
 module Helen_skaba where
 -- Copyright (c) 2016: Tapani Raunio, tapani.raunio@gmail.com
 
--- Price peaks and lows, i.e. local maxima and minima.
--- Constructor tells the whether first value is maximum or minimum
-
-
 type Price = Float
 
 type Year =   Int
@@ -100,17 +96,35 @@ calcPrice (Empty loss) xs = revenue*(1-loss) - costs
                             in if full then (False, sells + value x, buys)
                                   else (True, sells, buys+ value x)
 
+-- Helper function for bestMoney
+validTime :: (Ord a) => PriceData a Price -> [PriceData a Price]
+  -> [PriceData a Price]
+validTime y = filter (\x -> tag y < tag x)
 
--- Function input: Reqs, maxs, mins
--- Function output: most money :)
--- bestMoney :: Reqs -> [PriceData a b] -> [PriceData a b] -> [PriceData a b]
--- bestMoney _ _ _ = undefined
--- bestMoney _ [] _ = []
--- bestMoney _ _ [] = []
--- bestMoney (Full diff) highs lows =
-
-
--- step 1. calculate possible prices
-
-
--- bestMoney (Empty diff) b c = undefined
+-- Calculates the optimal solutions
+-- Input: battery state (loss, pric), highs, lows,
+-- Output: (price, optimal solution)
+bestMoney :: (Ord a) => Reqs ->   [PriceData a Price] -> [PriceData a Price]
+  -> (Price, [PriceData a Price])
+bestMoney (Full _ _) [] _ = (0, [])
+bestMoney (Empty _) _ []  = (0, [])
+bestMoney (Full loss price) highs lows =
+  foldr (\x acc -> if fst acc < fst x then x else acc) (0,[]) combs
+  where validHighs = filter (\x -> (1- loss)  * value x - price > 0)
+        lambda x = let val = validTime x
+                       rest = bestMoney (Empty loss) (val highs) (val lows)
+                       a = fst rest + (1-loss) * value x - price
+                       b = x: snd rest
+                    in (a,b)
+        combs = map lambda (validHighs highs)
+bestMoney (Empty loss) highs lows =
+  foldr (\x acc -> if fst acc < fst x then x else acc) (0,[]) combs
+  where validHighs y = filter (\x -> (1-loss) * value x - value y > 0)
+        valids y = validTime y . validHighs y
+        lambda x acc= if not (null (valids x highs)) then x:acc else acc
+        validLows = foldr lambda [] lows
+        combine x = let valHighs = validTime x highs
+                        valLows = validTime x lows
+                        rest = bestMoney (Full loss (value x)) valHighs valLows
+                    in (fst rest, x:snd rest)
+        combs = map combine validLows
