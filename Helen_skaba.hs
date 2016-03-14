@@ -30,13 +30,13 @@ instance Eq TimeStamp where
 instance Ord TimeStamp where
   compare (TS (D d1 m1 y1) s1 ) (TS (D d2 m2 y2) s2)
       | y1 < y2   = LT
-      | y2 > y1   = GT
+      | y1 > y2   = GT
       | m1 < m2   = LT
-      | m2 > m1   = GT
+      | m1 > m2   = GT
       | d1 < d2   = LT
-      | d2 > d2   = GT
+      | d1 > d2   = GT
       | s1 < s2   = LT
-      | s2 > s1   = GT
+      | s1 > s2   = GT
       | otherwise = EQ
 
 -- Checks whether first item is max/min.
@@ -121,7 +121,7 @@ bestMoney (Empty loss) highs lows =
   foldr (\x acc -> if fst acc < fst x then x else acc) (0,[]) combs
   where validHighs y = filter (\x -> (1-loss) * value x - value y > 0)
         valids y = validTime y . validHighs y
-        lambda x acc= if not (null (valids x highs)) then x:acc else acc
+        lambda x acc= if null (valids x highs) then acc else x:acc
         validLows = foldr lambda [] lows
         combine x = let valHighs = validTime x highs
                         valLows = validTime x lows
