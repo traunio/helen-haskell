@@ -19,7 +19,7 @@ readit xs = PD (TS date time) price
         date = readDate $ head line
         time = line !! 1
         price = read (line !! 2 ) :: Price
-
+        
 lastHour :: PriceData TimeStamp Price -> Bool
 lastHour (PD (TS _ time) _)
   | time == "23-00" = True
@@ -74,25 +74,36 @@ nicePrint (full, xs) (PD ts p)
 
 main :: IO()
 main = do
-  putStrLn "Running optimisation"
-  inph <- openFile "elspot_test.txt" ReadMode
-  _ <- hGetLine inph
-  sndStr <- hGetContents inph
-  let allLines = map readit $ lines sndStr
-      (a,b,c) = foldl accumulate (Full 0.2 0,[],[]) allLines
+  putStrLn "This program optimizes battery energy storage system."           
+  putStr "Provide input file name: "
+  infile <- getLine
+  putStr "\nProvide output file name: "
+  out <- getLine
+  putStr "\nHow much of original charge is lost between charge and discharge (default 0.2): "
+  xs <- getLine
+  let loss = case reads xs :: [(Float,String)] of
+        [] ->  0.2
+        [(a,_)] -> a
+  inph <- openFile infile ReadMode
+  _ <- hGetLine inph            -- Disregarding header line
+  all <- hGetContents inph
+  let allLines = map readit $ lines all
+      (a,b,c) = foldl accumulate (Full loss 0,[],[]) allLines
       highs = localMax c
       lows = localMin c
       resultList = (++) b $ snd (bestMoney a highs lows)
-      profit = calcPrice (Full 0.2 0) resultList
+      profit = calcPrice (Full loss 0) resultList
       cycles = length resultList `div` 2 +1
       totalres = snd $ foldl nicePrint (True,"") resultList
 
-
-  outh <- openFile "results.txt" WriteMode
-  hPutStrLn outh $ "Profit made " ++ show profit
-  hPutStrLn outh $ "Total cycles " ++ show cycles
+  outh <- openFile out WriteMode
+  hPutStrLn outh "Output generated with helen-haskell program"
+  hPutStrLn outh $ "Input file: " ++ show infile
+  hPutStrLn outh $ "Loss of charge between charge and discharge: " ++ show loss
+  hPutStrLn outh $ "Profit made " ++ show profit
+  hPutStrLn outh $ "Total cycles " ++ show cycles
   hPutStrLn outh totalres --(unlines $ map show resultList)
-
-
+  putStrLn $ "Profit made: " ++ show profit ++ ", cycles: " ++ show cycles
+  
   hClose inph
   hClose outh
