@@ -1,8 +1,26 @@
 -- Copyright (c) 2016 Tapani Raunio, tapani.raunio@gmail.com
 
+module Main (main) where
+
 import Helen_skaba
 import System.IO
 import Data.List
+import System.Console.GetOpt
+
+data Flag = Asking
+          | Help
+          | Input String
+          | Output String
+          | Loss Float
+
+-- options :: [OptDescr Flag]
+-- options =
+--   [ Option "a" ["asking"] (NoArg Asking) "Interactive mode"
+--   , Option "h" ["help"] (NoArg Help) "Print this help message"
+--   , Option "i" ["infile"] (ReqArg Input) "Input FILE"
+--   , Option "o" ["outfile"] (ReqArg Output ) "output FILE"
+--   , Option "l" ["loss"] (ReqArg (Loss . read) ) "loss fraction"
+--   ]
 
 -- horrible hack function, to read date. Will crash with wrong input :)
 readDate :: String -> Date
@@ -72,8 +90,8 @@ nicePrint (full, xs) (PD ts p)
   where niceTime (TS (D d m y) h) = intercalate "-" [show d,show m,show y] ++ " " ++ h ++ "."
 
 
-main :: IO()
-main = do
+interactive :: IO()
+interactive = do
   putStrLn "This program optimizes battery energy storage system."           
   putStr "Provide input file name: "
   infile <- getLine
@@ -87,23 +105,38 @@ main = do
   inph <- openFile infile ReadMode
   _ <- hGetLine inph            -- Disregarding header line
   all <- hGetContents inph
-  let allLines = map readit $ lines all
-      (a,b,c) = foldl accumulate (Full loss 0,[],[]) allLines
-      highs = localMax c
-      lows = localMin c
-      resultList = (++) b $ snd (bestMoney a highs lows)
-      profit = calcPrice (Full loss 0) resultList
-      cycles = length resultList `div` 2 +1
-      totalres = snd $ foldl nicePrint (True,"") resultList
+  writeOut loss infile out $ solve loss all
+  hClose inph
 
-  outh <- openFile out WriteMode
+writeOut :: ChargeLoss -> String -> String -> (Price, Int, String) -> IO()
+writeOut loss infile outfile (profit, cycles, res) = do 
+  outh <- openFile outfile WriteMode
   hPutStrLn outh "Output generated with helen-haskell program"
   hPutStrLn outh $ "Input file: " ++ show infile
   hPutStrLn outh $ "Loss of charge between charge and discharge: " ++ show loss
   hPutStrLn outh $ "Profit made " ++ show profit
   hPutStrLn outh $ "Total cycles " ++ show cycles
-  hPutStrLn outh totalres --(unlines $ map show resultList)
+  hPutStrLn outh res  --(unlines $ map show resultList)
   putStrLn $ "Profit made: " ++ show profit ++ ", cycles: " ++ show cycles
-  
-  hClose inph
   hClose outh
+
+solve :: ChargeLoss -> String -> (Price, Int, String)
+solve loss all =   let allLines = map readit $ lines all
+                       (a,b,c) = foldl accumulate (Full loss 0,[],[]) allLines
+                       highs = localMax c
+                       lows = localMin c
+                       resultList = (++) b $ snd (bestMoney a highs lows)
+                       profit = calcPrice (Full loss 0) resultList
+                       cycles = length resultList `div` 2 +1
+                       totalres = snd $ foldl nicePrint (True,"") resultList
+                   in (profit, cycles, totalres)
+
+
+main :: IO()
+main = do
+  interactive
+  
+  
+
+
+  
