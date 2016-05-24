@@ -6,21 +6,45 @@ import Helen_skaba
 import System.IO
 import Data.List
 import System.Console.GetOpt
+import Control.Monad (when)
+import System.Environment
 
-data Flag = Asking
-          | Help
-          | Input String
-          | Output String
-          | Loss Float
 
--- options :: [OptDescr Flag]
--- options =
---   [ Option "a" ["asking"] (NoArg Asking) "Interactive mode"
---   , Option "h" ["help"] (NoArg Help) "Print this help message"
---   , Option "i" ["infile"] (ReqArg Input) "Input FILE"
---   , Option "o" ["outfile"] (ReqArg Output ) "output FILE"
---   , Option "l" ["loss"] (ReqArg (Loss . read) ) "loss fraction"
---   ]
+-- Options
+data Options = Options
+ { optInteractive :: Bool
+ , optLoss        :: ChargeLoss
+ , optOutput      :: String
+ } deriving Show
+
+defaultOptions    = Options
+ { optInteractive = False
+ , optLoss        = 0.2 
+ , optOutput      = "results.txt"
+ }
+
+options :: [OptDescr (Options -> Options)]
+options =
+ [ Option ['i'] ["interactive"]
+     (NoArg (\ opts -> opts { optInteractive = True }))
+     "interactive mode"
+ , Option ['o']     ["output"]
+     (ReqArg (\ f opts -> opts { optOutput = f }) "FILE")
+     "specify output file name"
+ , Option ['l']     ["loss"]
+     (ReqArg (\ d opts -> opts { optLoss = read d}) "FLOAT")
+     "specify battery loss of initial charge when discharging. Must be 0<loss<1"
+ ]
+
+compilerOpts :: [String] -> IO (Options, String)
+compilerOpts argv =
+   case getOpt RequireOrder options argv of
+      (o,[n],[]  ) -> return (foldl (flip id) defaultOptions o, n)
+      (_,_,[]) -> ioError (userError (onlyOne ++ usageInfo header options))
+      (_,_,errs) -> ioError (userError (concat errs ++ usageInfo header options))
+  where header = "Usage: program name [OPTION...] files...\n\n"
+        onlyOne = "Supply only one input file name\n\n"
+
 
 -- horrible hack function, to read date. Will crash with wrong input :)
 readDate :: String -> Date
@@ -117,7 +141,8 @@ writeOut loss infile outfile (profit, cycles, res) = do
   hPutStrLn outh $ "Profit made " ++ show profit
   hPutStrLn outh $ "Total cycles " ++ show cycles
   hPutStrLn outh res  --(unlines $ map show resultList)
-  putStrLn $ "Profit made: " ++ show profit ++ ", cycles: " ++ show cycles
+  putStrLn $ "Profit made: " ++ show profit ++
+    ", cycles: " ++ show cycles ++ ". Loss : " ++ show loss
   hClose outh
 
 solve :: ChargeLoss -> String -> (Price, Int, String)
@@ -134,9 +159,15 @@ solve loss all =   let allLines = map readit $ lines all
 
 main :: IO()
 main = do
-  interactive
-  
-  
-
-
-  
+  argv <- getArgs
+  (op,infile) <- compilerOpts argv
+  when (optInteractive op) interactive
+  when (not $ optInteractive op) $ do
+    let out = optOutput op
+        oLoss = optLoss op
+        loss = if oLoss < 1 && oLoss > 0 then oLoss else 0.2
+    inph <- openFile infile ReadMode
+    _ <- hGetLine inph            -- Disregarding header line
+    all <- hGetContents inph
+    writeOut loss infile out $ solve loss all
+    hClose inph
