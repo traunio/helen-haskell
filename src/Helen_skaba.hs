@@ -31,12 +31,12 @@ instance Ord TimeStamp where
   compare (TS (D d1 m1 y1) s1 ) (TS (D d2 m2 y2) s2)
       | y1 < y2   = LT
       | y1 > y2   = GT
-      | m1 < m2   = LT
-      | m1 > m2   = GT
-      | d1 < d2   = LT
-      | d1 > d2   = GT
-      | s1 < s2   = LT
-      | s1 > s2   = GT
+      | m1 < m2   = LT
+      | m1 > m2   = GT
+      | d1 < d2   = LT
+      | d1 > d2   = GT
+      | s1 < s2   = LT
+      | s1 > s2   = GT
       | otherwise = EQ
 
 -- Checks whether first item is max/min.
@@ -45,9 +45,9 @@ firstEx :: (b -> b -> Bool) -> [PriceData a b] -> [PriceData a b]
 firstEx _ [] = []
 firstEx _ [_] = []
 firstEx f (x:y:xs)
-  | value x `f` value y     = [x]
-  | value y `f` value x     = []
-  | otherwise = firstEx f (x:xs)
+  | value x `f` value y     = [x]
+  | value y `f` value x     = []
+  | otherwise = firstEx f (x:xs)
 
 lastEx :: (b -> b -> Bool) -> [PriceData a b] -> [PriceData a b]
 lastEx f = firstEx f . reverse
@@ -58,8 +58,8 @@ localEx _ [] = []
 localEx _ [_] = []
 localEx f [x,y]
   | value x `f` value y = [x]
-  | value y `f` value x = [y]
-  | otherwise = []
+  | value y `f` value x = [y]
+  | otherwise = []
 localEx f xs = firstEx f xs ++ lEx f xs ++ lastEx f xs
 
 -- Helper function for localEx
@@ -68,9 +68,9 @@ lEx _ [] = []
 lEx _ [_] = []
 lEx _ [_,_] = []
 lEx f (x:y:z:xs)
-    | value x == value y                         = lEx f (x:z:xs)
-    | value y `f` value x && value y `f` value z = y : lEx f (y:z:xs)
-    | value y == value z                         = lEx f (x:z:xs)
+    | value x == value y                         = lEx f (x:z:xs)
+    | value y `f` value x && value y `f` value z = y : lEx f (y:z:xs)
+    | value y == value z                         = lEx f (x:z:xs)
     | otherwise                                  = lEx f (y:z:xs)
 
 -- Calculates the local maxima (including end points)

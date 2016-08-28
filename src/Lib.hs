@@ -1,6 +1,4 @@
--- Copyright (c) 2016 Tapani Raunio, tapani.raunio@gmail.com
-
-module Main (main) where
+module Lib (mainfunction) where
 
 import Helen_skaba
 import System.IO
@@ -157,8 +155,8 @@ solve loss all =   let allLines = map readit $ lines all
                    in (profit, cycles, totalres)
 
 
-main :: IO()
-main = do
+mainfunction :: IO()
+mainfunction = do
   argv <- getArgs
   (op,infile) <- compilerOpts argv
   when (optInteractive op) interactive
